@@ -14,7 +14,7 @@ def init_app(app):
 
 
 def login_verify():
-    if request.path == '/accounts/login':
+    if request.path == '/accounts/login/':
         return None
     token = request.headers.get('X-TOKEN')
     if token and len(token) == 32:
@@ -23,7 +23,7 @@ def login_verify():
             g.user.token_expired = time.time() + 8 * 60 * 60
             g.user.save()
             return None
-    return {"msg": "Auth fail, please login"}, 401
+    return {"message": "Auth fail, please login"}, 401
 
 
 def cross_domain_access_before():
