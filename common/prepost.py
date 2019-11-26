@@ -2,7 +2,9 @@
 # _*_ coding: utf-8 _*_
 
 
-from flask import request, make_response
+from flask import request, make_response, g
+import time
+from resources.accounts.models import User
 
 
 def init_app(app):
@@ -12,9 +14,15 @@ def init_app(app):
 
 
 def login_verify():
-    token = request.headers.get('X-TOKEN')
-    if request.path == '/login':
+    if request.path == '/accounts/login':
         return None
+    token = request.headers.get('X-TOKEN')
+    if token and len(token) == 32:
+        g.user = User.query.filter_by(access_token=token).first()
+        if g.user and g.user.status and g.user.token_expired >= time.time():
+            g.user.token_expired = time.time() + 8 * 60 * 60
+            g.user.save()
+            return None
     return {"msg": "Auth fail, please login"}, 401
 
 
@@ -23,7 +31,7 @@ def cross_domain_access_before():
         response = make_response()
         response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers['Access-Control-Allow-Headers'] = 'X-TOKEN'
-        response.headers['Access-Control-Max-Age'] = 24 * 60 * 60
+        response.headers['Access-Control-Max-Age'] = 8 * 60 * 60
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE', 'OPTIONS'
         return response
 

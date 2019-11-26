@@ -4,10 +4,12 @@
 
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from app import db
+import uuid
+from app import db, app
+from common.sqlmixins import SqlMixin
 
 
-class Permission(db.Model):
+class Permission(db.Model, SqlMixin):
     __tablename__ = 'permissions'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(64), nullable=False, unique=True)
@@ -21,7 +23,7 @@ class Permission(db.Model):
         ordering = ('-id',)
 
 
-class Role(db.Model):
+class Role(db.Model, SqlMixin):
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(32), unique=True, nullable=False)
@@ -36,7 +38,7 @@ class Role(db.Model):
         ordering = ('-id',)
 
 
-class User(db.Model):
+class User(db.Model, SqlMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     name = db.Column(db.String(16), unique=True, nullable=False)
@@ -49,8 +51,8 @@ class User(db.Model):
     access_token = db.Column(db.String(32))
     token_expired = db.Column(db.Integer)
     ctime = db.Column(db.DateTime, default=datetime.now)
-    login_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    last_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    login_time = db.Column(db.DateTime, default=datetime.now)
+    last_time = db.Column(db.DateTime, default=datetime.now)
     groups = db.relationship('Group', secondary='user_group', backref=db.backref('users', lazy='dynamic'))
     roles = db.relationship('Role', secondary='user_role', backref=db.backref('users', lazy='dynamic'))
     permissions = db.relationship('Permission', secondary='user_permission', backref=db.backref('users', lazy='dynamic'))
@@ -66,6 +68,10 @@ class User(db.Model):
     def verify_password(self, pwd):
         return check_password_hash(self.pwd_hash, pwd)
 
+    @staticmethod
+    def generate_auth_token():
+        return uuid.uuid4().hex
+
     def __repr__(self):
         return '<User {}: {}>'.format(self.id, self.name)
 
@@ -73,7 +79,7 @@ class User(db.Model):
         ordering = ('-id',)
 
 
-class Group(db.Model):
+class Group(db.Model, SqlMixin):
     __tablename__ = 'groups'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     name = db.Column(db.String(16), unique=True, nullable=False)
