@@ -5,7 +5,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
-from app import db, app
+from app import db
 from common.sqlmixins import SqlMixin
 
 
@@ -13,11 +13,11 @@ class Permission(db.Model, SqlMixin):
     __tablename__ = 'permissions'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String(64), nullable=False, unique=True)
-    dis_name = db.Column(db.String(32), nullable=False, unique=True)
     desc = db.Column(db.String(255), nullable=False)
+    ctime = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
-        return '<Permission {}: {}({})>'.format(self.id, self.dis_name, self.name)
+        return '<Permission {}: {}>'.format(self.id, self.name)
 
     class Meta:
         ordering = ('-id',)

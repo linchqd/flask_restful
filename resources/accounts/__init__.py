@@ -3,9 +3,11 @@
 
 
 from resources.accounts.user import Users
+from resources.accounts.group import Groups
 from resources.accounts.login import Login
 
 
 def add_resource(api):
     api.add_resource(Users, '/accounts/users/')
+    api.add_resource(Groups, '/accounts/groups/')
     api.add_resource(Login, '/accounts/login/')
