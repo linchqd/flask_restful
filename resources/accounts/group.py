@@ -2,10 +2,10 @@
 # _*_ coding: utf-8 _*_
 
 
-from flask_restful import Resource, reqparse, request
+from flask_restful import Resource, reqparse, request, abort
 
 from resources.accounts.models import Group
-from common.MaSchema import GroupSchema, UserSchema, User
+from common.MaSchema import GroupSchema, UserSchema, User, Role, Permission
 
 
 class Groups(Resource):
@@ -15,6 +15,7 @@ class Groups(Resource):
             group = Group.query.filter_by(name=name).first()
             if group:
                 return {"group": self.dump_user(GroupSchema().dump(group))}
+            abort(404, message="group is not exists")
         return {"groups": self.dump_user(GroupSchema(many=True).dump(Group.query.all()))}
 
     def post(self):
@@ -31,10 +32,31 @@ class Groups(Resource):
         return {"group": {"id": group.id, "name": group.name}}
 
     def put(self):
-        pass
+        data = self.add_arguments(put=True)
+        errors = self.schema_validate(data)
+        if errors:
+            return errors
+        group = Group.query.get(data.get("id"))
+        if group:
+            res = self.update_items(group, data)
+            if res:
+                return res
+            group.save()
+            return {"group": group.name}
+        abort(404, message="group is not exists")
 
     def patch(self):
-        pass
+        errors = self.schema_validate(request.json)
+        if errors:
+            return errors
+        group = Group.query.get(request.json.get("id"))
+        if group:
+            res = self.update_items(group, request.json)
+            if res:
+                return res
+            group.save()
+            return {"group": group.name}
+        abort(404, message="group is not exists")
 
     @staticmethod
     def delete():
@@ -43,14 +65,39 @@ class Groups(Resource):
         if isinstance(group_id, int):
             group_list.append(Group.query.get(group_id))
         elif isinstance(group_id, list):
-            user_list = User.query.filter(Group.id.in_(group_id)).all()
+            group_list = Group.query.filter(Group.id.in_(group_id)).all()
         else:
             return {"message": "用户组id必须为int or list类型"}
         if group_list:
             for group in group_list:
                 group.delete()
             return {}
-        return {"message": "用户组不存在"}
+        abort(404, message="group is not exists")
+
+    def update_items(self, obj, data):
+        for k, v in data.items():
+            if hasattr(obj, k) and getattr(obj, k) != v:
+                if k in ['name', 'desc']:
+                    res = self.verify_group_unique_fields({k: v})
+                    if res:
+                        return {"message": res}
+                elif k == 'users':
+                    if not isinstance(v, list):
+                        return {"message": "users must be type of list"}
+                    obj.users = User.query.filter(User.id.in_(v)).all()
+                    continue
+                elif k == 'roles':
+                    if not isinstance(v, list):
+                        return {"message": "roles must be type of list"}
+                    obj.roles = Role.query.filter(Role.id.in_(v)).all()
+                    continue
+                elif k == 'permissions':
+                    if not isinstance(v, list):
+                        return {"message": "permissions must be type of list"}
+                    obj.permissions = Permission.query.filter(Permission.id.in_(v)).all()
+                    continue
+                setattr(obj, k, v)
+        return None
 
     @staticmethod
     def verify_group_unique_fields(data):
@@ -76,15 +123,17 @@ class Groups(Resource):
         return groups
 
     @staticmethod
-    def add_arguments():
+    def add_arguments(put=False):
         parse = reqparse.RequestParser()
         parse.add_argument('name', type=str, required=True, help=u'group name is required', location='json')
         parse.add_argument('desc', type=str, required=True, help=u'group desc is required', location='json')
+        if put:
+            parse.add_argument('id', type=int, required=True, help=u'group id is required', location='json')
         return parse.parse_args()
 
     @staticmethod
     def schema_validate(data):
-        errors = GroupSchema(exclude=("roles", "permissions")).validate(data, partial=True)
+        errors = GroupSchema(exclude=("users", "roles", "permissions")).validate(data, partial=True)
         if errors:
             res = {"message": {}}
             for k, v in errors.items():

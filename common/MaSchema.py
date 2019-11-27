@@ -14,6 +14,7 @@ class PermissionSchema(ma.ModelSchema):
 
 
 class RoleSchema(ma.ModelSchema):
+    permissions = fields.Nested(PermissionSchema, many=True, only=('id', 'name', 'desc', 'ctime'))
 
     class Meta:
         model = Role

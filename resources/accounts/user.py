@@ -2,7 +2,7 @@
 # _*_ coding: utf-8 _*_
 
 
-from flask_restful import Resource, reqparse, inputs, request
+from flask_restful import Resource, reqparse, inputs, request, abort
 from flask import g
 from common.MaSchema import UserSchema, User, Group, Role, Permission
 
@@ -15,7 +15,7 @@ class Users(Resource):
             user = User.query.filter_by(name=name).first()
             if user:
                 return UserSchema(exclude=('pwd_hash','access_token', 'token_expired')).dump(user)
-            return {"message": "user {} is not exist".format(name)}
+            abort(404, message=u"user {} is not exist".format(name))
         return {"users": UserSchema(many=True, exclude=('pwd_hash','access_token', 'token_expired')).dump(User.query.all())}
 
     def post(self):
@@ -46,7 +46,7 @@ class Users(Resource):
                 return res
             user.save()
             return {"user": user.name}
-        return {"message": "用户不存在"}
+        abort(404, message="user is not exists")
 
     def patch(self):
         errors = self.schema_validate(request.json)
@@ -59,7 +59,7 @@ class Users(Resource):
                 return res
             user.save()
             return {"user": user.name}
-        return {"message": "user is not exists"}
+        abort(404, message="user is not exists")
 
     @staticmethod
     def delete():
@@ -75,7 +75,7 @@ class Users(Resource):
             for u in user_list:
                 u.delete()
             return {}
-        return {"message": "用户不存在"}
+        abort(404, message="user is not exists")
 
     @staticmethod
     def schema_validate(data):
@@ -106,7 +106,6 @@ class Users(Resource):
         return parse
 
     def update_items(self, user, data):
-        print(data)
         for k, v in data.items():
             if hasattr(user, k) and getattr(user, k) != v:
                 if k in ['name', 'cname', 'phone_number', 'email']:
@@ -119,23 +118,17 @@ class Users(Resource):
                 elif k == 'groups':
                     if not isinstance(v, list):
                         return {"message": "groups must be type of list"}
-                    groups = Group.query.filter(Group.id.in_(v)).all()
-                    if groups:
-                        user.groups = groups
+                    user.groups = Group.query.filter(Group.id.in_(v)).all()
                     continue
                 elif k == 'roles':
                     if not isinstance(v, list):
                         return {"message": "roles must be type of list"}
-                    roles = Role.query.filter(Role.id.in_(v)).all()
-                    if roles:
-                        user.roles = roles
+                    user.roles = Role.query.filter(Role.id.in_(v)).all()
                     continue
                 elif k == 'permissions':
                     if not isinstance(v, list):
                         return {"message": "permissions must be type of list"}
-                    permissions = Permission.query.filter(Permission.id.in_(v)).all()
-                    if permissions:
-                        user.permissions = permissions
+                    user.permissions = Permission.query.filter(Permission.id.in_(v)).all()
                     continue
                 setattr(user, k, v)
         if data.get("password"):
