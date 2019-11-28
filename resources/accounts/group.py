@@ -6,9 +6,11 @@ from flask_restful import Resource, reqparse, request, abort
 
 from resources.accounts.models import Group
 from common.MaSchema import GroupSchema, UserSchema, User, Role, Permission
+from common.Authentication import permission_required
 
 
 class Groups(Resource):
+    @permission_required('group_get_list')
     def get(self):
         name = request.args.get("name")
         if name:
@@ -18,6 +20,7 @@ class Groups(Resource):
             abort(404, message="group is not exists")
         return {"groups": self.dump_user(GroupSchema(many=True).dump(Group.query.all()))}
 
+    @permission_required('group_add')
     def post(self):
         data = self.add_arguments()
         errors = self.schema_validate(data)
@@ -31,6 +34,7 @@ class Groups(Resource):
         group.save()
         return {"group": {"id": group.id, "name": group.name}}
 
+    @permission_required('group_update')
     def put(self):
         data = self.add_arguments(put=True)
         errors = self.schema_validate(data)
@@ -45,6 +49,7 @@ class Groups(Resource):
             return {"group": group.name}
         abort(404, message="group is not exists")
 
+    @permission_required('group_modify')
     def patch(self):
         errors = self.schema_validate(request.json)
         if errors:
@@ -59,6 +64,7 @@ class Groups(Resource):
         abort(404, message="group is not exists")
 
     @staticmethod
+    @permission_required('group_delete')
     def delete():
         group_id = request.json.get("id")
         group_list = []

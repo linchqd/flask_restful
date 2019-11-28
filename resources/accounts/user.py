@@ -10,22 +10,22 @@ from common.MaSchema import UserSchema, User, Group, Role, Permission
 
 class Users(Resource):
     @staticmethod
-    @permission_required('user_get')
+    @permission_required('user_get_owner|user_get_list')
     def get():
         name = request.args.get('name')
         if name:
             user = User.query.filter_by(name=name).first()
             if user:
-                if g.user is user or g.user.is_super:
+                if g.user is user or g.user.is_super or 'user_get_list' in g.user.get_permissions():
                     return UserSchema(exclude=('pwd_hash','access_token', 'token_expired')).dump(user)
                 else:
                     return {"message": "Permission denied"}, 403
             abort(404, message=u"user {} is not exist".format(name))
-        if 'user_getlist' in g.user.get_permissions() or g.user.is_super:
+        if 'user_get_list' in g.user.get_permissions() or g.user.is_super:
             return {"users": UserSchema(many=True, exclude=('pwd_hash','access_token', 'token_expired')).dump(User.query.filter_by(is_super=False))}
         return {"message": "Permission denied"}, 403
 
-    @permission_required('user_post')
+    @permission_required('user_add')
     def post(self):
         parse = reqparse.RequestParser()
         data = self.add_arguments(parse).parse_args()
@@ -40,7 +40,7 @@ class Users(Resource):
         user.save()
         return {"user": {"id": user.id, "name": user.name}}
 
-    @permission_required('user_put')
+    @permission_required('user_update_owner|user_update_all')
     def put(self):
         parse = reqparse.RequestParser()
         parse.add_argument('id', type=int, required=True, help=u'缺少参数id', location='json')
@@ -50,6 +50,9 @@ class Users(Resource):
             return errors
         user = User.query.get(data['id'])
         if user:
+            if not g.user.is_super:
+                if user.is_super or ('user_update_all' not in g.user.get_permissions() and g.user is not user):
+                    return {"message": "Permission denied"}, 403
             res = self.update_items(user, data)
             if res:
                 return res
@@ -57,13 +60,16 @@ class Users(Resource):
             return {"user": user.name}
         abort(404, message="user is not exists")
 
-    @permission_required('user_patch')
+    @permission_required('user_modify')
     def patch(self):
         errors = self.schema_validate(request.json)
         if errors:
             return errors
         user = User.query.get(request.json.get("id"))
         if user:
+            if not g.user.is_super:
+                if user.is_super or 'user_modify' not in g.user.get_permissions():
+                    return {"message": "Permission denied"}, 403
             res = self.update_items(user, request.json)
             if res:
                 return res
@@ -84,6 +90,8 @@ class Users(Resource):
             return {"message": "用户id必须为int or list类型"}
         if user_list:
             for u in user_list:
+                if not g.user.is_super and u.is_super:
+                    return {"message": "Permission denied"}, 403
                 u.delete()
             return {}
         abort(404, message="user is not exists")
@@ -108,8 +116,6 @@ class Users(Resource):
     def add_arguments(parse):
         parse.add_argument('name', type=str, required=True, help=u'缺少用户名参数name', location='json')
         parse.add_argument('cname', type=str, required=True, help=u'缺少用户别名参数cname', location='json')
-        parse.add_argument('is_super', type=inputs.boolean, default=False, location='json')
-        parse.add_argument('status', type=inputs.boolean, default=True, location='json')
         parse.add_argument('phone_number', required=True, type=inputs.regex(r'1[3578]\d{9}'),
                            help=u'缺少phone_number参数或手机号码格式不对', location='json')
         parse.add_argument('email', type=str, required=True, help=u'缺少email参数或email格式不对', location='json')
@@ -139,7 +145,13 @@ class Users(Resource):
                 elif k == 'permissions':
                     if not isinstance(v, list):
                         return {"message": "permissions must be type of list"}
-                    user.permissions = Permission.query.filter(Permission.id.in_(v)).all()
+                    if g.user.is_super:
+                        user.permissions = Permission.query.filter(Permission.id.in_(v)).all()
+                    else:
+                        for pid in v:
+                            if pid < 500:
+                                return {"message": "Permission denied"}
+                        user.permissions = Permission.query.filter(Permission.id.in_(v)).all()
                     continue
                 setattr(user, k, v)
         if data.get("password"):

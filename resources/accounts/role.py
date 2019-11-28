@@ -6,9 +6,11 @@ from flask_restful import Resource, reqparse, request, abort
 
 from resources.accounts.models import Role
 from common.MaSchema import RoleSchema, UserSchema, GroupSchema, User, Group, Permission
+from common.Authentication import permission_required
 
 
 class Roles(Resource):
+    @permission_required('role_get_list')
     def get(self):
         name = request.args.get("name")
         if name:
@@ -18,6 +20,7 @@ class Roles(Resource):
             abort(404, message="role is not exists")
         return {"roles": self.dump_user_and_group(RoleSchema(many=True).dump(Role.query.all()))}
 
+    @permission_required('role_add')
     def post(self):
         data = self.add_arguments()
         errors = self.schema_validate(data)
@@ -31,6 +34,7 @@ class Roles(Resource):
         role.save()
         return {"role": {"id": role.id, "name": role.name}}
 
+    @permission_required('role_update')
     def put(self):
         data = self.add_arguments(put=True)
         errors = self.schema_validate(data)
@@ -45,6 +49,7 @@ class Roles(Resource):
             return {"role": role.name}
         abort(404, message="role is not exists")
 
+    @permission_required('role_modify')
     def patch(self):
         errors = self.schema_validate(request.json)
         if errors:
@@ -59,6 +64,7 @@ class Roles(Resource):
         abort(404, message="role is not exists")
 
     @staticmethod
+    @permission_required('role_delete')
     def delete():
         role_id = request.json.get("id")
         role_list = []
