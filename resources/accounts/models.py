@@ -72,6 +72,28 @@ class User(db.Model, SqlMixin):
     def generate_auth_token():
         return uuid.uuid4().hex
 
+    @staticmethod
+    def permission_join(p_set, p_obj_list):
+        for p_obj in p_obj_list:
+            p_set.add(p_obj.name)
+        return p_set
+
+    def get_permissions(self):
+        permission_set = set()
+        if self.is_super:
+            return set()
+        if self.permissions:
+            permission_set = self.permission_join(permission_set, self.permissions)
+        if self.groups:
+            for group in self.groups:
+                if group.permissions:
+                    permission_set = self.permission_join(permission_set, group.permissions)
+        if self.roles:
+            for role in self.roles:
+                if role.permissions:
+                    permission_set = self.permission_join(permission_set, role.permissions)
+        return permission_set
+
     def __repr__(self):
         return '<User {}: {}>'.format(self.id, self.name)
 

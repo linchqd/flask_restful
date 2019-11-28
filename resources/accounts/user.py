@@ -4,20 +4,28 @@
 
 from flask_restful import Resource, reqparse, inputs, request, abort
 from flask import g
+from common.Authentication import permission_required
 from common.MaSchema import UserSchema, User, Group, Role, Permission
 
 
 class Users(Resource):
     @staticmethod
+    @permission_required('user_get')
     def get():
         name = request.args.get('name')
         if name:
             user = User.query.filter_by(name=name).first()
             if user:
-                return UserSchema(exclude=('pwd_hash','access_token', 'token_expired')).dump(user)
+                if g.user is user or g.user.is_super:
+                    return UserSchema(exclude=('pwd_hash','access_token', 'token_expired')).dump(user)
+                else:
+                    return {"message": "Permission denied"}, 403
             abort(404, message=u"user {} is not exist".format(name))
-        return {"users": UserSchema(many=True, exclude=('pwd_hash','access_token', 'token_expired')).dump(User.query.all())}
+        if 'user_getlist' in g.user.get_permissions() or g.user.is_super:
+            return {"users": UserSchema(many=True, exclude=('pwd_hash','access_token', 'token_expired')).dump(User.query.filter_by(is_super=False))}
+        return {"message": "Permission denied"}, 403
 
+    @permission_required('user_post')
     def post(self):
         parse = reqparse.RequestParser()
         data = self.add_arguments(parse).parse_args()
@@ -32,6 +40,7 @@ class Users(Resource):
         user.save()
         return {"user": {"id": user.id, "name": user.name}}
 
+    @permission_required('user_put')
     def put(self):
         parse = reqparse.RequestParser()
         parse.add_argument('id', type=int, required=True, help=u'缺少参数id', location='json')
@@ -48,6 +57,7 @@ class Users(Resource):
             return {"user": user.name}
         abort(404, message="user is not exists")
 
+    @permission_required('user_patch')
     def patch(self):
         errors = self.schema_validate(request.json)
         if errors:
@@ -62,6 +72,7 @@ class Users(Resource):
         abort(404, message="user is not exists")
 
     @staticmethod
+    @permission_required('user_delete')
     def delete():
         user_id = request.json.get("id")
         user_list = []

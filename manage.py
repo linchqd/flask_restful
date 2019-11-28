@@ -2,7 +2,7 @@
 # _*_ coding: utf-8 _*_
 
 
-import os, sys
+import os, sys, datetime
 from functools import wraps
 from getpass import getpass
 from resources.accounts.models import User
@@ -42,13 +42,14 @@ def init_db():
     if user_input.strip() == 'y':
         db.drop_all()
         db.create_all()
-        sql = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libs", "init.sql")
+        sql = os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "sql", "init.sql")
         with open(sql, 'r') as f:
             line = f.readline()
             while line:
                 if line.startswith("INSERT INTO"):
                     db.engine.execute(line.strip())
                 line = f.readline()
+            db.engine.execute("UPDATE permissions set ctime='{}'".format(datetime.datetime.now()))
         user = User(name="admin", cname="admin", email="admin@admin.com",
                     phone_number="13888888888", password="admin", is_super=True)
         user.save()
