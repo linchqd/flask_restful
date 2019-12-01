@@ -28,21 +28,23 @@ class Login(Resource):
                     user.login_time = datetime.datetime.now()
                     user.save()
                     return {
-                        "username": user.name,
-                        "nickname": user.cname,
-                        "is_super": user.is_super,
-                        "token": user.access_token,
-                        "permissions": user.permissions
+                        "data": {
+                            "username": user.name,
+                            "nickname": user.cname,
+                            "is_super": user.is_super,
+                            "token": user.access_token,
+                            "permissions": list(user.get_permissions())
+                        }
                     }
                 else:
                     login_limit[user.name] += 1
                     if login_limit[user.name] >= 3:
                         user.update(status=False)
-                    return {"message": "密码错误, 3次将被禁用, 当前次数: {}".format(login_limit[user.name])}
+                    return {"message": "密码错误, 3次将被禁用, 当前次数: {}".format(login_limit[user.name])}, 401
             else:
-                return {"message": "user {} is disabled!".format(user.name)}
+                return {"message": "user {} is disabled!".format(user.name)}, 401
         elif login_limit[args.get('username')] >= 3:
-            return {"message": "user {} is disabled!".format(args.get('username'))}
+            return {"message": "user {} is disabled!".format(args.get('username'))}, 401
         else:
             login_limit[args.get('username')] += 1
-            return {"message": "用户名不存在"}
+            return {"message": "用户名不存在"}, 401

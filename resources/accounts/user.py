@@ -16,13 +16,13 @@ class Users(Resource):
         if name:
             user = User.query.filter_by(name=name).first()
             if user:
-                if g.user is user or g.user.is_super or 'user_get_list' in g.user.get_permissions():
-                    return UserSchema(exclude=('pwd_hash','access_token', 'token_expired')).dump(user)
+                if g.user is user or g.user.is_super or ('user_get_list' in g.user.get_permissions() and not user.is_super):
+                    return {"data": UserSchema(exclude=('pwd_hash','access_token', 'token_expired')).dump(user)}
                 else:
                     return {"message": "Permission denied"}, 403
             abort(404, message=u"user {} is not exist".format(name))
         if 'user_get_list' in g.user.get_permissions() or g.user.is_super:
-            return {"users": UserSchema(many=True, exclude=('pwd_hash','access_token', 'token_expired')).dump(User.query.filter_by(is_super=False))}
+            return {"data": UserSchema(many=True, exclude=('pwd_hash','access_token', 'token_expired')).dump(User.query.filter_by(is_super=False))}
         return {"message": "Permission denied"}, 403
 
     @permission_required('user_add')
@@ -38,7 +38,7 @@ class Users(Resource):
                 return {"message": res}
         user = User(**data)
         user.save()
-        return {"user": {"id": user.id, "name": user.name}}
+        return {"data": "添加成功, 用户id: {}".format(user.id)}
 
     @permission_required('user_update_owner|user_update_all')
     def put(self):
@@ -80,10 +80,14 @@ class Users(Resource):
     @staticmethod
     @permission_required('user_delete')
     def delete():
+        if not request.json:
+            return {"message": '缺少要删除的用户id或id列表'}
         user_id = request.json.get("id")
         user_list = []
         if isinstance(user_id, int):
-            user_list.append(User.query.get(user_id))
+            user = User.query.get(user_id)
+            if user:
+                user_list.append(user)
         elif isinstance(user_id, list):
             user_list = User.query.filter(User.id.in_(user_id)).all()
         else:
@@ -93,7 +97,7 @@ class Users(Resource):
                 if not g.user.is_super and u.is_super:
                     return {"message": "Permission denied"}, 403
                 u.delete()
-            return {}
+            return {"data": '删除成功'}
         abort(404, message="user is not exists")
 
     @staticmethod
