@@ -43,7 +43,6 @@ def init_db():
         db.drop_all()
         db.create_all()
         sql = os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "sql", "init.sql")
-        print(sql)
         with open(sql, 'r') as f:
             line = f.readline()
             while line:
