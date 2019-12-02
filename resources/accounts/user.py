@@ -22,7 +22,7 @@ class Users(Resource):
                     return {"message": "Permission denied"}, 403
             abort(404, message=u"user {} is not exist".format(name))
         if 'user_get_list' in g.user.get_permissions() or g.user.is_super:
-            return {"data": UserSchema(many=True, exclude=('pwd_hash','access_token', 'token_expired')).dump(User.query.filter_by(is_super=False))}
+            return {"data": UserSchema(many=True, exclude=('pwd_hash','access_token', 'token_expired')).dump(User.query.all())}
         return {"message": "Permission denied"}, 403
 
     @permission_required('user_add')
@@ -44,7 +44,7 @@ class Users(Resource):
     def put(self):
         parse = reqparse.RequestParser()
         parse.add_argument('id', type=int, required=True, help=u'缺少参数id', location='json')
-        data = self.add_arguments(parse).parse_args()
+        data = self.add_arguments(parse, put=True).parse_args()
         errors = self.schema_validate(data)
         if errors:
             return errors
@@ -57,7 +57,7 @@ class Users(Resource):
             if res:
                 return res
             user.save()
-            return {"user": user.name}
+            return {"data": "更新成功"}
         abort(404, message="user is not exists")
 
     @permission_required('user_modify')
@@ -74,7 +74,7 @@ class Users(Resource):
             if res:
                 return res
             user.save()
-            return {"user": user.name}
+            return {"data": '修改成功'}
         abort(404, message="user is not exists")
 
     @staticmethod
@@ -117,13 +117,14 @@ class Users(Resource):
         return None
 
     @staticmethod
-    def add_arguments(parse):
+    def add_arguments(parse, put=False):
         parse.add_argument('name', type=str, required=True, help=u'缺少用户名参数name', location='json')
         parse.add_argument('cname', type=str, required=True, help=u'缺少用户别名参数cname', location='json')
         parse.add_argument('phone_number', required=True, type=inputs.regex(r'1[3578]\d{9}'),
                            help=u'缺少phone_number参数或手机号码格式不对', location='json')
         parse.add_argument('email', type=str, required=True, help=u'缺少email参数或email格式不对', location='json')
-        parse.add_argument('password', type=str, required=True, help=u"缺少密码参数password", location='json')
+        if not put:
+            parse.add_argument('password', type=str, required=True, help=u"缺少密码参数password", location='json')
         return parse
 
     def update_items(self, user, data):

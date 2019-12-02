@@ -10,15 +10,15 @@ from common.Authentication import permission_required
 
 
 class Groups(Resource):
-    @permission_required('group_get_list')
+    @permission_required('user_modify|group_get_list')
     def get(self):
         name = request.args.get("name")
         if name:
             group = Group.query.filter_by(name=name).first()
             if group:
-                return {"group": self.dump_user(GroupSchema().dump(group))}
+                return {"data": self.dump_user(GroupSchema().dump(group))}
             abort(404, message="group is not exists")
-        return {"groups": self.dump_user(GroupSchema(many=True).dump(Group.query.all()))}
+        return {"data": self.dump_user(GroupSchema(many=True).dump(Group.query.all()))}
 
     @permission_required('group_add')
     def post(self):
