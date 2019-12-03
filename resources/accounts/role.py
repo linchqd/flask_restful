@@ -10,15 +10,15 @@ from common.Authentication import permission_required
 
 
 class Roles(Resource):
-    @permission_required('role_get_list')
+    @permission_required('user_modify|role_get_list')
     def get(self):
         name = request.args.get("name")
         if name:
             role = Role.query.filter_by(name=name).first()
             if role:
-                return {"role": self.dump_user_and_group(RoleSchema().dump(role))}
+                return {"data": self.dump_user_and_group(RoleSchema().dump(role))}
             abort(404, message="role is not exists")
-        return {"roles": self.dump_user_and_group(RoleSchema(many=True).dump(Role.query.all()))}
+        return {"data": self.dump_user_and_group(RoleSchema(many=True).dump(Role.query.all()))}
 
     @permission_required('role_add')
     def post(self):

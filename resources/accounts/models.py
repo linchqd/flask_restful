@@ -32,7 +32,7 @@ class Role(db.Model, SqlMixin):
     permissions = db.relationship('Permission', secondary='role_permission', backref=db.backref('roles', lazy='dynamic'))
 
     def __repr__(self):
-        return '<Role {}: {}'.format(self.id, self.name)
+        return '<Role {}: {}>'.format(self.id, self.name)
 
     class Meta:
         ordering = ('-id',)

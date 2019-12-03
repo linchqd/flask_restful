@@ -32,7 +32,7 @@ class Groups(Resource):
                 return {"message": res}
         group = Group(**data)
         group.save()
-        return {"group": {"id": group.id, "name": group.name}}
+        return {"data": "添加成功"}
 
     @permission_required('group_update')
     def put(self):
@@ -46,7 +46,7 @@ class Groups(Resource):
             if res:
                 return res
             group.save()
-            return {"group": group.name}
+            return {"data": '更新成功'}
         abort(404, message="group is not exists")
 
     @permission_required('group_modify')
@@ -60,7 +60,7 @@ class Groups(Resource):
             if res:
                 return res
             group.save()
-            return {"group": group.name}
+            return {"data": '修改成功'}
         abort(404, message="group is not exists")
 
     @staticmethod
@@ -77,7 +77,7 @@ class Groups(Resource):
         if group_list:
             for group in group_list:
                 group.delete()
-            return {}
+            return {"data": "删除成功"}
         abort(404, message="group is not exists")
 
     def update_items(self, obj, data):
