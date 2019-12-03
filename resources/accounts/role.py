@@ -10,7 +10,7 @@ from common.Authentication import permission_required
 
 
 class Roles(Resource):
-    @permission_required('user_modify|role_get_list')
+    @permission_required('role_get_list')
     def get(self):
         name = request.args.get("name")
         if name:
@@ -32,7 +32,7 @@ class Roles(Resource):
                 return {"message": res}
         role = Role(**data)
         role.save()
-        return {"role": {"id": role.id, "name": role.name}}
+        return {"data": "添加成功"}
 
     @permission_required('role_update')
     def put(self):
@@ -46,7 +46,7 @@ class Roles(Resource):
             if res:
                 return res
             role.save()
-            return {"role": role.name}
+            return {"data": "更新成功"}
         abort(404, message="role is not exists")
 
     @permission_required('role_modify')
@@ -60,7 +60,7 @@ class Roles(Resource):
             if res:
                 return res
             role.save()
-            return {"role": role.name}
+            return {"data": "修改成功"}
         abort(404, message="role is not exists")
 
     @staticmethod
@@ -77,7 +77,7 @@ class Roles(Resource):
         if role_list:
             for role in role_list:
                 role.delete()
-            return {}
+            return {'data': '删除成功'}
         abort(404, message="role is not exists")
 
     @staticmethod
