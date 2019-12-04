@@ -10,7 +10,7 @@ from common.Authentication import permission_required
 
 
 class Groups(Resource):
-    @permission_required('user_modify|group_get_list')
+    @permission_required('group_get_list')
     def get(self):
         name = request.args.get("name")
         if name:

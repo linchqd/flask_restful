@@ -33,7 +33,7 @@ class Login(Resource):
                             "nickname": user.cname,
                             "is_super": user.is_super,
                             "token": user.access_token,
-                            "permissions": list(user.get_permissions())
+                            "roles": [role.name for role in user.roles]
                         }
                     }
                 else:

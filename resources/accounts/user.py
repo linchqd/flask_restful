@@ -22,7 +22,7 @@ class Users(Resource):
                     return {"message": "Permission denied"}, 403
             abort(404, message=u"user {} is not exist".format(name))
         if 'user_get_list' in g.user.get_permissions() or g.user.is_super:
-            return {"data": UserSchema(many=True, exclude=('pwd_hash','access_token', 'token_expired')).dump(User.query.all())}
+            return {"data": UserSchema(many=True, exclude=('pwd_hash', 'access_token', 'token_expired')).dump(User.query.filter(User.id != 1).all())}
         return {"message": "Permission denied"}, 403
 
     @permission_required('user_add')
@@ -37,6 +37,7 @@ class Users(Resource):
             if res:
                 return {"message": res}
         user = User(**data)
+        user.roles.append(Role.query.get(3))
         user.save()
         return {"data": "添加成功, 用户id: {}".format(user.id)}
 

@@ -47,12 +47,8 @@ def init_db():
             line = f.readline()
             while line:
                 if line.startswith("INSERT INTO"):
-                    db.engine.execute(line.strip())
+                    db.engine.execute(line.strip().format(datetime.datetime.now()))
                 line = f.readline()
-            db.engine.execute("UPDATE permissions set ctime='{}'".format(datetime.datetime.now()))
-        user = User(name="admin", cname="admin", email="admin@admin.com",
-                    phone_number="13888888888", password="admin", is_super=True)
-        user.save()
         print('数据库已初始化成功! 管理员账号: admin 管理员密码: admin')
 
 

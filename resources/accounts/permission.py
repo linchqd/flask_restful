@@ -9,7 +9,7 @@ from common.Authentication import permission_required
 
 class Permissions(Resource):
     @staticmethod
-    @permission_required('user_modify|permission_get_list')
+    @permission_required('permission_get_list')
     def get():
         pid = request.args.get("id")
         if pid:
