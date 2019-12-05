@@ -37,7 +37,7 @@ class Users(Resource):
             if res:
                 return {"message": res}
         user = User(**data)
-        user.roles.append(Role.query.get(3))
+        user.roles.append(Role.query.get(2))
         user.save()
         return {"data": "添加成功, 用户id: {}".format(user.id)}
 
@@ -151,13 +151,9 @@ class Users(Resource):
                 elif k == 'permissions':
                     if not isinstance(v, list):
                         return {"message": "permissions must be type of list"}
-                    if g.user.is_super:
-                        user.permissions = Permission.query.filter(Permission.id.in_(v)).all()
-                    else:
-                        for pid in v:
-                            if pid < 500:
-                                return {"message": "Permission denied"}
-                        user.permissions = Permission.query.filter(Permission.id.in_(v)).all()
+                    if not g.user.is_super:
+                        return {"message": "Permission denied"}, 403
+                    user.permissions = Permission.query.filter(Permission.id.in_(v)).all()
                     continue
                 setattr(user, k, v)
         if data.get("password"):

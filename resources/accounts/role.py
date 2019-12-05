@@ -3,6 +3,7 @@
 
 
 from flask_restful import Resource, reqparse, request, abort
+from flask import g
 
 from resources.accounts.models import Role
 from common.MaSchema import RoleSchema, UserSchema, GroupSchema, User, Group, Permission
@@ -149,6 +150,8 @@ class Roles(Resource):
                 elif k == 'permissions':
                     if not isinstance(v, list):
                         return {"message": "permissions must be type of list"}
+                    if not g.user.is_super:
+                        return {"message": "Permission denied"}, 403
                     obj.permissions = Permission.query.filter(Permission.id.in_(v)).all()
                     continue
                 setattr(obj, k, v)

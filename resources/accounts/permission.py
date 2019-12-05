@@ -18,4 +18,4 @@ class Permissions(Resource):
                 return {"data": PermissionSchema().dump(permission)}
             else:
                 abort(404, message=u'permission is not exist')
-        return {"data": PermissionSchema(many=True).dump(Permission.query.filter(Permission.id < 500).all())}
+        return {"data": PermissionSchema(many=True).dump(Permission.query.all())}

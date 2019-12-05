@@ -24,11 +24,12 @@ INSERT INTO permissions (id, name, `desc`, `ctime`) VALUES (305, 'role_get_list'
 -- permission
 INSERT INTO permissions (id, name, `desc`, `ctime`) VALUES (401, 'permission_get_list', '查看权限和权限列表', '{}');
 
+-- dashboard
+INSERT INTO permissions (id, name, `desc`, `ctime`) VALUES (501, 'dashboard', '查看dashboard', '{}');
+
 -- default superuser / role
 INSERT INTO users (id, `name`, `cname`, `email`, `phone_number`, `pwd_hash`, `is_super`, `status`, `ctime`) values (1, 'admin', 'admin', 'admin@admin.com', '13888888888', 'pbkdf2:sha256:150000$ymlosmY7$184ddd6854ef11252a8a0f5b78511773548bb5e9ccf7460360d936d4b72e8bf1', True, True, '{}');
 INSERT INTO roles (id, name, `desc`, `ctime`) VALUES (1, '账户管理员', '账户管理者,可以对用户/用户组进行增删改查操作', '{}');
-INSERT INTO roles (id, name, `desc`, `ctime`) VALUES (2, '角色管理员', '角色管理者,可以对角色进行增删改查/赋予权限操作', '{}');
-INSERT INTO roles (id, name, `desc`, `ctime`) VALUES (3, '系统默认角色', '所有用户都应该拥有该角色', '{}');
-INSERT INTO role_permission (`role_id`, `permission_id`) VALUES (1, 101), (1, 102), (1, 103), (1, 104), (1, 105), (1, 106), (1, 107), (1, 201), (1, 202), (1, 203), (1, 204), (1, 205);
-INSERT INTO role_permission (`role_id`, `permission_id`) VALUES (2, 301), (2, 302), (2, 303), (2, 304), (2, 305), (2, 401);
-INSERT INTO role_permission (`role_id`, `permission_id`) VALUES (3, 103), (3, 106);
+INSERT INTO roles (id, name, `desc`, `ctime`) VALUES (2, '系统默认角色', '所有用户都应该拥有该角色', '{}');
+INSERT INTO role_permission (`role_id`, `permission_id`) VALUES (1, 101), (1, 102), (1, 103), (1, 104), (1, 105), (1, 106), (1, 107), (1, 201), (1, 202), (1, 203), (1, 204), (1, 205),  (1, 305), (1, 501);
+INSERT INTO role_permission (`role_id`, `permission_id`) VALUES (2, 103), (2, 106), (2, 501);
